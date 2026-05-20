@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Web OS</title>
+<style>
+/* ==================== ASOSIY STILLAR ==================== */
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  overflow: hidden;
+  user-select: none;
+  height: 100vh;
+}
+
+/* ==================== DESKTOP ==================== */
+#desktop {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  padding: 20px;
+  gap: 10px;
+}
+
+/* ==================== DESKTOP ICONLAR ==================== */
+.desktop-icon {
+  width: 80px;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background .2s;
+  padding: 5px;
+}
+.desktop-icon:hover { background: rgba(255,255,255,.15); }
+.desktop-icon .icon-img {
+  font-size: 36px;
+  margin-bottom: 4px;
+}
+.desktop-icon span {
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+  text-shadow: 1px 1px 3px rgba(0,0,0,.8);
+}
+
+/* ==================== TASKBAR ==================== */
+#taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: rgba(15,20,30,.92);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  z-index: 9999;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+#startBtn {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  transition: background .2s;
+}
+#startBtn:hover { background: rgba(255,255,255,.15); }
+#taskbarApps {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+  padding: 0 10px;
+  overflow-x: auto;
+}
+.taskbar-app {
+  height: 36px;
+  padding: 0 14px;
+  background: rgba(255,255,255,.08);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s;
+}
+.taskbar-app:hover { background: rgba(255,255,255,.18); }
+.taskbar-app.active { background: rgba(255,255,255,.25); border-bottom: 2px solid #0078d4; }
+#taskbarClock {
+  color: #fff;
+  font-size: 13px;
+  padding: 0 12px;
+}
+
+/* ==================== START MENU ==================== */
+#startMenu {
+  display: none;
+  position: fixed;
+  bottom: 52px;
+  left: 8px;
+  width: 320px;
+  background: rgba(20,25,40,.96);
+  backdrop-filter: blur(16px);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.1);
+  z-index: 10000;
+  padding: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.5);
+}
+#startMenu.show { display: block; animation: slideUp .2s ease; }
+@keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+#startMenu h3 { color: #fff; font-size: 16px; margin-bottom: 12px; }
+#searchBar {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font-size: 13px;
+  margin-bottom: 12px;
+  outline: none;
+}
+#searchBar::placeholder { color: rgba(255,255,255,.4); }
+.menu-app {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 13px;
+  transition: background .15s;
+}
+.menu-app:hover { background: rgba(255,255,255,.12); }
+.menu-app .m-icon { font-size: 22px; }
+#startMenuFooter {
+  border-top: 1px solid rgba(255,255,255,.1);
+  margin-top: 10px;
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#startMenuFooter span { color: rgba(255,255,255,.6); font-size: 12px; }
+.power-btn {
+  background: rgba(255,70,70,.2);
+  border: none;
+  color: #ff6b6b;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.power-btn:hover { background: rgba(255,70,70,.4); }
+
+/* ==================== OYNALAR (WINDOWS) ==================== */
+.window {
+  position: absolute;
+  background: rgba(25,30,45,.96);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,.45);
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+  min-height: 200px;
+  overflow: hidden;
+  animation: winOpen .25s ease;
+}
+@keyframes winOpen { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:scale(1); } }
+.window-header {
+  height: 36px;
+  background: rgba(0,0,0,.3);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  cursor: move;
+  flex-shrink: 0;
+}
+.window-header .win-title {
+  flex: 1;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+.win-controls {
+  display: flex;
+  gap: 4px;
+}
+.win-ctrl {
+  width: 28px; height: 28px;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s;
+  background: transparent;
+}
+.win-ctrl:hover { background: rgba(255,255,255,.15); }
+.win-ctrl.close-btn:hover { background: #e81123; }
+.window-body {
+  flex: 1;
+  overflow: auto;
+  color: #ddd;
+  font-size: 13px;
+  padding: 0;
+}
+
+/* ==================== SCROLLBAR ==================== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 3px; }
+
+/* ==================== CALCULATOR ==================== */
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 12px;
+}
+.calc-display {
+  grid-column: 1 / -1;
+  background: rgba(0,0,0,.3);
+  color: #fff;
+  font-size: 28px;
+  text-align: right;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  min-height: 52px;
+  word-break: break-all;
+}
+.calc-btn {
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  transition: background .15s;
+}
+.calc-btn:hover { background: rgba(255,255,255,.18); }
+.calc-btn.op { background: rgba(0,120,212,.4); }
+.calc-btn.op:hover { background: rgba(0,120,212,.6); }
+.calc-btn.eq { background: #0078d4; }
+.calc-btn.eq:hover { background: #1a8fe0; }
+.calc-btn.clear { background: rgba(232,17,35,.4); }
+
+/* ==================== NOTEPAD ==================== */
+.notepad-area {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,.2);
+  color: #e0e0e0;
+  border: none;
+  padding: 12px;
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  resize: none;
+  outline: none;
+}
+.notepad-toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.notepad-toolbar button {
+  background: rgba(255,255,255,.08);
+  border: none;
+  color: #ccc;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+.notepad-toolbar button:hover { background: rgba(255,255,255,.15); }
+
+/* ==================== FILE EXPLORER ==================== */
+.explorer-sidebar {
+  width: 140px;
+  background: rgba(0,0,0,.15);
+  padding: 10px;
+  border-right: 1px solid rgba(255,255,255,.06);
+  flex-shrink: 0;
+}
+.explorer-sidebar div {
+  padding: 6px 8px;
+  color: #ccc;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+.explorer-sidebar div:hover { background: rgba(255,255,255,.08); }
+.explorer-sidebar div.active-s { background: rgba(0,120,212,.3); }
+.explorer-main { flex: 1; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+.explorer-item {
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #ddd;
+  font-size: 11px;
+  text-align: center;
+}
+.explorer-item:hover { background: rgba(255,255,255,.08); }
+.explorer-item .fi { font-size: 30px; margin-bottom: 4px; }
+
+/* ==================== SETTINGS ==================== */
+.settings-panel { padding: 20px; }
+.settings-panel h2 { color: #fff; font-size: 18px; margin-bottom: 16px; }
+.setting-group {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,.05);
+  border-radius: 8px;
+}
+.setting-group label { color: #aaa; font-size: 12px; display: block; margin-bottom: 6px; }
+.wallpaper-opts { display: flex; gap: 8px; flex-wrap: wrap; }
+.wallpaper-opt {
+  width: 60px; height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border .2s;
+}
+.wallpaper-opt:hover, .wallpaper-opt.selected { border-color: #0078d4; }
+.toggle-switch {
+  width: 44px; height: 22px;
+  background: rgba(255,255,255,.15);
+  border-radius: 11px;
+  cursor: pointer;
+  position: relative;
+  transition: background .2s;
+}
+.toggle-switch.on { background: #0078d4; }
+.toggle-switch::after {
+  content: '';
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px; left: 2px;
+  transition: left .2s;
+}
+.toggle-switch.on::after { left: 24px; }
+
+/* ==================== TERMINAL ==================== */
+.terminal-body {
+  background: rgba(0,0,0,.5);
+  padding: 12px;
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  color: #0f0;
+  height: 100%;
+  overflow-y: auto;
+}
+.terminal-body .cmd-line { display: flex; gap: 4px; }
+.terminal-body .prompt { color: #00d4aa; }
+.terminal-body input {
+  background: transparent;
+  border: none;
+  color: #0f0;
+  font-family: inherit;
+  font-size: inherit;
+  flex: 1;
+  outline: none;
+}
+.term-output { margin-bottom: 6px; color: #ccc; white-space: pre-wrap; }
+
+/* ==================== WEATHER APP ==================== */
+.weather-app { padding: 20px; text-align: center; }
+.weather-app .w-icon { font-size: 64px; margin-bottom: 8px; }
+.weather-app .w-temp { font-size: 42px; color: #fff; }
+.weather-app .w-desc { color: #aaa; font-size: 14px; margin-top: 4px; }
+.weather-details { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+.weather-details div { text-align: center; }
+.weather-details .wd-val { color: #fff; font-size: 18px; }
+.weather-details .wd-label { color: #888; font-size: 11px; }
+
+/* ==================== BROWSER ==================== */
+.browser-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.browser-bar input {
+  flex: 1;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: #fff;
+  font-size: 12px;
+  outline: none;
+}
+.browser-bar button {
+  background: rgba(255,255,255,.08);
+  border: none;
+  color: #ccc;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.browser-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 14px;
+}
+
+/* ==================== GALLERY ==================== */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px,1fr));
+  gap: 8px;
+  padding: 12px;
+}
+.gallery-item {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  transition: transform .15s;
+}
+.gallery-item:hover { transform: scale(1.05); }
+
+/* ==================== ABOUT ==================== */
+.about-body { padding: 30px; text-align: center; }
+.about-body .logo { font-size: 60px; margin-bottom: 10px; }
+.about-body h1 { color: #fff; font-size: 22px; margin-bottom: 6px; }
+.about-body p { color: #999; font-size: 13px; margin-bottom: 4px; }
+
+/* ==================== CONTEXT MENU ==================== */
+#contextMenu {
+  display: none;
+  position: fixed;
+  background: rgba(20,25,40,.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  padding: 6px;
+  z-index: 20000;
+  min-width: 180px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.5);
+}
+.ctx-item {
+  padding: 7px 12px;
+  color: #ddd;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.ctx-item:hover { background: rgba(0,120,212,.4); }
+.ctx-sep { height: 1px; background: rgba(255,255,255,.08); margin: 4px 0; }
+
+/* ==================== NOTIFICATION ==================== */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(20,25,40,.95);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  padding: 14px 20px;
+  color: #fff;
+  font-size: 13px;
+  z-index: 30000;
+  animation: notifIn .3s ease, notifOut .3s ease 2.7s forwards;
+  box-shadow: 0 6px 20px rgba(0,0,0,.4);
+}
+@keyframes notifIn { from { opacity:0; transform:translateX(30px); } }
+@keyframes notifOut { to { opacity:0; transform:translateX(30px); } }
+
+/* ==================== MAXIMIZED ==================== */
+.window.maximized { top: 0 !important; left: 0 !important; width: 100vw !important; height: calc(100vh - 48px) !important; border-radius: 0; }
+</style>
+</head>
+<body>
+
+<!-- DESKTOP -->
+<div id="desktop">
+  <div class="desktop-icon" ondblclick="openApp('explorer')"><div class="icon-img">📁</div><span>Fayllar</span></div>
+  <div class="desktop-icon" ondblclick="openApp('browser')"><div class="icon-img">🌐</div><span>Brauzer</span></div>
+  <div class="desktop-icon" ondblclick="openApp('notepad')"><div class="icon-img">📝</div><span>Bloknot</span></div>
+  <div class="desktop-icon" ondblclick="openApp('calculator')"><div class="icon-img">🧮</div><span>Hisoblagich</span></div>
+  <div class="desktop-icon" ondblclick="openApp('terminal')"><div class="icon-img">💻</div><span>Terminal</span></div>
+  <div class="desktop-icon" ondblclick="openApp('weather')"><div class="icon-img">🌤️</div><span>Ob-havo</span></div>
+  <div class="desktop-icon" ondblclick="openApp('gallery')"><div class="icon-img">🖼️</div><span>Galeriya</span></div>
+  <div class="desktop-icon" ondblclick="openApp('settings')"><div class="icon-img">⚙️</div><span>Sozlamalar</span></div>
+  <div class="desktop-icon" ondblclick="openApp('about')"><div class="icon-img">ℹ️</div><span>Tizim haqida</span></div>
+</div>
+
+<!-- TASKBAR -->
+<div id="taskbar">
+  <div id="startBtn" onclick="toggleStartMenu()">🪟</div>
+  <div id="taskbarApps"></div>
+  <div id="taskbarClock"></div>
+</div>
+
+<!-- START MENU -->
+<div id="startMenu">
+  <input type="text" id="searchBar" placeholder="🔍 Qidirish..." oninput="searchApps(this.value)">
+  <div id="menuApps"></div>
+  <div id="startMenuFooter">
+    <span>Mini Web OS v2.0</span>
+    <button class="power-btn" onclick="shutDown()">⏻ O'chirish</button>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="contextMenu">
+  <div class="ctx-item" onclick="openApp('settings')">⚙️ Sozlamalar</div>
+  <div class="ctx-item" onclick="openApp('terminal')">💻 Terminal</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="changeWallpaperRandom()">🎨 Fonni o'zgartirish</div>
+  <div class="ctx-item" onclick="location.reload()">🔄 Yangilash</div>
+</div>
+
+<script>
+// ==================== GLOBAL O'ZGARUVCHILAR ====================
+let windowCount = 0;
+let zIndex = 100;
+let openWindows = {};
+const apps = [
+  { id:'explorer', name:'Fayllar', icon:'📁' },
+  { id:'browser', name:'Brauzer', icon:'🌐' },
+  { id:'notepad', name:'Bloknot', icon:'📝' },
+  { id:'calculator', name:'Hisoblagich', icon:'🧮' },
+  { id:'terminal', name:'Terminal', icon:'💻' },
+  { id:'weather', name:'Ob-havo', icon:'🌤️' },
+  { id:'gallery', name:'Galeriya', icon:'🖼️' },
+  { id:'settings', name:'Sozlamalar', icon:'⚙️' },
+  { id:'about', name:'Tizim haqida', icon:'ℹ️' },
+  { id:'music', name:'Musiqa', icon:'🎵' },
+  { id:'calendar', name:'Taqvim', icon:'📅' },
+  { id:'photos', name:'Rasmlar', icon:'📷' }
+];
+
+const wallpapers = [
+  'linear-gradient(135deg, #0f2027, #203a43, #2c5364)',
+  'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+  'linear-gradient(135deg, #0d1b2a, #1b263b, #415a77)',
+  'linear-gradient(135deg, #2d1b69, #11998e)',
+  'linear-gradient(135deg, #c33764, #1d2671)',
+  'linear-gradient(135deg, #141e30, #243b55)',
+  'linear-gradient(135deg, #000428, #004e92)',
+  'linear-gradient(135deg, #200122, #6f0000)',
+  'linear-gradient(135deg, #1f1c2c, #928dab)',
+  'linear-gradient(135deg, #0f0c29, #302b63, #24243e)'
+];
+let currentWallpaper = 0;
+
+// ==================== SOAT ====================
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours().toString().padStart(2,'0');
+  const m = now.getMinutes().toString().padStart(2,'0');
+  const s = now.getSeconds().toString().padStart(2,'0');
+  document.getElementById('taskbarClock').textContent = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ==================== START MENU ====================
+function toggleStartMenu() {
+  document.getElementById('startMenu').classList.toggle('show');
+  renderMenuApps();
+}
+function renderMenuApps(filter='') {
+  const container = document.getElementById('menuApps');
+  const filtered = apps.filter(a => a.name.toLowerCase().includes(filter.toLowerCase()));
+  container.innerHTML = filtered.map(a =>
+    `<div class="menu-app" onclick="openApp('${a.id}');toggleStartMenu();">
+      <span class="m-icon">${a.icon}</span><span>${a.name}</span>
+    </div>`
+  ).join('');
+}
+function searchApps(v) { renderMenuApps(v); }
+
+// ==================== CONTEXT MENU ====================
+document.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  const cm = document.getElementById('contextMenu');
+  cm.style.display = 'block';
+  cm.style.left = e.clientX + 'px';
+  cm.style.top = e.clientY + 'px';
+});
+document.addEventListener('click', e => {
+  document.getElementById('contextMenu').style.display = 'none';
+  if (!e.target.closest('#startMenu') && !e.target.closest('#startBtn')) {
+    document.getElementById('startMenu').classList.remove('show');
+  }
+});
+
+// ==================== NOTIFICATION ====================
+function notify(msg) {
+  const n = document.createElement('div');
+  n.className = 'notification';
+  n.textContent = msg;
+  document.body.appendChild(n);
+  setTimeout(() => n.remove(), 3000);
+}
+
+// ==================== SHUTDOWN ====================
+function shutDown() {
+  document.getElementById('startMenu').classList.remove('show');
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;';
+  overlay.innerHTML = '<div style="color:#fff;font-size:18px;">Tizim o\'chirilmoqda...</div><div style="color:#666;margin-top:10px;font-size:13px;">Sahifani qayta yuklang</div>';
+  document.body.appendChild(overlay);
+  setTimeout(() => { overlay.innerHTML = '<div style="color:#333;font-size:14px;">⏻ Tizim o\'chirildi</div>'; }, 2000);
+}
+
+// ==================== OYNA YARATISH ====================
+function createWindow(appId, title, icon, width, height, content) {
+  if (openWindows[appId]) {
+    focusWindow(openWindows[appId]);
+    return openWindows[appId];
+  }
+  windowCount++;
+  const id = 'win_' + windowCount;
+  const win = document.createElement('div');
+  win.className = 'window';
+  win.id = id;
+  win.dataset.appId = appId;
+  win.style.width = width + 'px';
+  win.style.height = height + 'px';
+  win.style.left = (80 + windowCount * 30) + 'px';
+  win.style.top = (40 + windowCount * 30) + 'px';
+  win.style.zIndex = ++zIndex;
+
+  win.innerHTML = `
+    <div class="window-header" onmousedown="startDrag(event,'${id}')">
+      <span>${icon}</span>
+      <span class="win-title">${title}</span>
+      <div class="win-controls">
+        <button class="win-ctrl" onclick="minimizeWindow('${id}')">─</button>
+        <button class="win-ctrl" onclick="maximizeWindow('${id}')">☐</button>
+        <button class="win-ctrl close-btn" onclick="closeWindow('${id}')">✕</button>
+      </div>
+    </div>
+    <div class="window-body">${content}</div>
+  `;
+
+  win.addEventListener('mousedown', () => focusWindow(id));
+  document.getElementById('desktop').appendChild(win);
+  openWindows[appId] = id;
+  updateTaskbarApps();
+  return id;
+}
+
+function focusWindow(id) {
+  document.querySelectorAll('.window').forEach(w => w.style.zIndex = 99);
+  const win = document.getElementById(id);
+  if (win) {
+    win.style.zIndex = ++zIndex;
+    if (win.style.display === 'none') win.style.display = 'flex';
+  }
+  updateTaskbarApps();
+}
+
+function closeWindow(id) {
+  const win = document.getElementById(id);
+  if (win) {
+    win.style.animation = 'none';
+    win.style.opacity = '0';
+    win.style.transform = 'scale(.9)';
+    win.style.transition = 'all .2s';
+    setTimeout(() => win.remove(), 200);
+    const appId = win.dataset.appId;
+    delete openWindows[appId];
+    setTimeout(updateTaskbarApps, 210);
+  }
+}
+
+function minimizeWindow(id) {
+  document.getElementById(id).style.display = 'none';
+  updateTaskbarApps();
+}
+
+function maximizeWindow(id) {
+  document.getElementById(id).classList.toggle('maximized');
+}
+
+// ==================== TASKBAR ILOVALAR ====================
+function updateTaskbarApps() {
+  const container = document.getElementById('taskbarApps');
+  container.innerHTML = '';
+  for (const [appId, winId] of Object.entries(openWindows)) {
+    const app = apps.find(a => a.id === appId);
+    if (!app) continue;
+    const win = document.getElementById(winId);
+    const isActive = win && win.style.display !== 'none';
+    const btn = document.createElement('div');
+    btn.className = 'taskbar-app' + (isActive ? ' active' : '');
+    btn.innerHTML = `${app.icon} ${app.name}`;
+    btn.onclick = () => {
+      if (win.style.display === 'none') { win.style.display = 'flex'; focusWindow(winId); }
+      else focusWindow(winId);
+    };
+    container.appendChild(btn);
+  }
+}
+
+// ==================== OYNA SURISH (DRAG) ====================
+let dragData = null;
+function startDrag(e, id) {
+  if (e.target.closest('.win-controls')) return;
+  const win = document.getElementById(id);
+  if (win.classList.contains('maximized')) return;
+  dragData = { id, startX: e.clientX, startY: e.clientY, origLeft: parseInt(win.style.left), origTop: parseInt(win.style.top) };
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', stopDrag);
+  focusWindow(id);
+}
+function onDrag(e) {
+  if (!dragData) return;
+  const win = document.getElementById(dragData.id);
+  win.style.left = (dragData.origLeft + e.clientX - dragData.startX) + 'px';
+  win.style.top = (dragData.origTop + e.clientY - dragData.startY) + 'px';
+}
+function stopDrag() {
+  dragData = null;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', stopDrag);
+}
+
+// ==================== FONNI O'ZGARTIRISH ====================
+function changeWallpaperRandom() {
+  currentWallpaper = (currentWallpaper + 1) % wallpapers.length;
+  document.getElementById('desktop').style.background = wallpapers[currentWallpaper];
+  notify('🎨 Fon o\'zgartirildi!');
+}
+function setWallpaper(i) {
+  currentWallpaper = i;
+  document.getElementById('desktop').style.background = wallpapers[i];
+  document.querySelectorAll('.wallpaper-opt').forEach((el,idx) => el.classList.toggle('selected', idx===i));
+  notify('🎨 Fon o\'rnatildi!');
+}
+
+// ==================== ILVALARNI OCHISH ====================
+function openApp(appId) {
+  switch(appId) {
+    case 'calculator': openCalculator(); break;
+    case 'notepad': openNotepad(); break;
+    case 'explorer': openExplorer(); break;
+    case 'settings': openSettings(); break;
+    case 'terminal': openTerminal(); break;
+    case 'weather': openWeather(); break;
+    case 'browser': openBrowser(); break;
+    case 'gallery': openGallery(); break;
+    case 'about': openAbout(); break;
+    case 'music': openMusic(); break;
+    case 'calendar': openCalendar(); break;
+    case 'photos': openPhotos(); break;
+  }
+}
+
+// ---------- CALCULATOR ----------
+let calcExpr = '';
+function openCalculator() {
+  const content = `
+    <div class="calc-grid">
+      <div class="calc-display" id="calcDisplay">0</div>
+      <button class="calc-btn clear" onclick="calcClear()">C</button>
+      <button class="calc-btn op" onclick="calcInput('(')">(</button>
+      <button class="calc-btn op" onclick="calcInput(')')">)</button>
+      <button class="calc-btn op" onclick="calcInput('/')">÷</button>
+      <button class="calc-btn" onclick="calcInput('7')">7</button>
+      <button class="calc-btn" onclick="calcInput('8')">8</button>
+      <button class="calc-btn" onclick="calcInput('9')">9</button>
+      <button class="calc-btn op" onclick="calcInput('*')">×</button>
+      <button class="calc-btn" onclick="calcInput('4')">4</button>
+      <button class="calc-btn" onclick="calcInput('5')">5</button>
+      <button class="calc-btn" onclick="calcInput('6')">6</button>
+      <button class="calc-btn op" onclick="calcInput('-')">−</button>
+      <button class="calc-btn" onclick="calcInput('1')">1</button>
+      <button class="calc-btn" onclick="calcInput('2')">2</button>
+      <button class="calc-btn" onclick="calcInput('3')">3</button>
+      <button class="calc-btn op" onclick="calcInput('+')">+</button>
+      <button class="calc-btn" onclick="calcInput('0')" style="grid-column:span 2">0</button>
+      <button class="calc-btn" onclick="calcInput('.')">.</button>
+      <button class="calc-btn eq" onclick="calcEval()">=</button>
+    </div>`;
+  createWindow('calculator','Hisoblagich','🧮', 300, 420, content);
+}
+function calcInput(v) { calcExpr += v; document.getElementById('calcDisplay').textContent = calcExpr; }
+function calcClear() { calcExpr = ''; document.getElementById('calcDisplay').textContent = '0'; }
+function calcEval() {
+  try {
+    const r = eval(calcExpr);
+    document.getElementById('calcDisplay').textContent = r;
+    calcExpr = String(r);
+  } catch { document.getElementById('calcDisplay').textContent = 'Xato'; calcExpr = ''; }
+}
+
+// ---------- NOTEPAD ----------
+let noteContent = '';
+function openNotepad() {
+  const content = `
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <div class="notepad-toolbar">
+        <button onclick="noteAction('new')">📄 Yangi</button>
+        <button onclick="noteAction('save')">💾 Saqlash</button>
+        <button onclick="noteAction('copy')">📋 Nusxa</button>
+        <button onclick="noteAction('wc')">🔢 So'zlar</button>
+      </div>
+      <textarea class="notepad-area" id="noteArea" placeholder="Matn yozing...">${noteContent}</textarea>
+    </div>`;
+  createWindow('notepad','Bloknot','📝', 500, 400, content);
+}
+function noteAction(act) {
+  const area = document.getElementById('noteArea');
+  if (act === 'new') { area.value = ''; noteContent = ''; }
+  if (act === 'save') { noteContent = area.value; notify('💾 Saqlandi!'); }
+  if (act === 'copy') { navigator.clipboard?.writeText(area.value); notify('📋 Nusxa olindi!'); }
+  if (act === 'wc') { const w = area.value.trim() ? area.value.trim().split(/\s+/).length : 0; notify(`🔢 So'zlar soni: ${w}`); }
+}
+
+// ---------- FILE EXPLORER ----------
+function openExplorer() {
+  const content = `
+    <div style="display:flex;height:100%;">
+      <div class="explorer-sidebar">
+        <div class="active-s">📁 Bosh sahifa</div>
+        <div>📄 Hujjatlar</div>
+        <div>🖼️ Rasmlar</div>
+        <div>🎵 Musiqa</div>
+        <div>📥 Yuklanmalar</div>
+        <div>💾 Disk C:</div>
+      </div>
+      <div class="explorer-main">
+        <div class="explorer-item" ondblclick="notify('📁 Papka ochildi')"><div class="fi">📁</div>Hujjatlar</div>
+        <div class="explorer-item" ondblclick="notify('📁 Papka ochildi')"><div class="fi">📁</div>Rasmlar</div>
+        <div class="explorer-item" ondblclick="notify('📁 Papka ochildi')"><div class="fi">📁</div>Musiqa</div>
+        <div class="explorer-item" ondblclick="notify('📁 Papka ochildi')"><div class="fi">📁</div>Video</div>
+        <div class="explorer-item" ondblclick="notify('📁 Papka ochildi')"><div class="fi">📁</div>Yuklanmalar</div>
+        <div class="explorer-item"><div class="fi">📄</div>readme.txt</div>
+        <div class="explorer-item"><div class="fi">📊</div>hisobot.xlsx</div>
+        <div class="explorer-item"><div class="fi">📑</div>loyiha.pdf</div>
+        <div class="explorer-item"><div class="fi">🖼️</div>foto.jpg</div>
+        <div class="explorer-item"><div class="fi">🎵</div>qo'shiq.mp3</div>
+      </div>
+    </div>`;
+  createWindow('explorer','Fayl Menejeri','📁', 620, 420, content);
+}
+
+// ---------- SETTINGS ----------
+function openSettings() {
+  const wpHtml = wallpapers.map((w,i) =>
+    `<div class="wallpaper-opt ${i===currentWallpaper?'selected':''}" style="background:${w};" onclick="setWallpaper(${i})"></div>`
+  ).join('');
+  const content = `
+    <div class="settings-panel">
+      <h2>⚙️ Sozlamalar</h2>
+      <div class="setting-group">
+        <label>🎨 Desktop foni</label>
+        <div class="wallpaper-opts">${wpHtml}</div>
+      </div>
+      <div class="setting-group">
+        <label>🌙 Tungi rejim</label>
+        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-group">
+        <label>🔔 Bildirishnomalar</label>
+        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-group">
+        <label>🔊 Ovoz balandligi</label>
+        <input type="range" min="0" max="100" value="75" style="width:100%;accent-color:#0078d4;">
+      </div>
+    </div>`;
+  createWindow('settings','Sozlamalar','⚙️', 420, 480, content);
+}
+
+// ---------- TERMINAL ----------
+function openTerminal() {
+  const content = `
+    <div class="terminal-body" id="termBody">
+      <div class="term-output">Mini Web OS Terminal v2.0
+Yordam: help, date, clear, echo, whoami, neofetch</div>
+      <div class="cmd-line">
+        <span class="prompt">user@webos:~$ </span>
+        <input type="text" id="termInput" onkeydown="if(event.key==='Enter')termExec()" autofocus>
+      </div>
+    </div>`;
+  createWindow('terminal','Terminal','💻', 520, 350, content);
+  setTimeout(() => document.getElementById('termInput')?.focus(), 100);
+}
+function termExec() {
+  const input = document.getElementById('termInput');
+  const cmd = input.value.trim();
+  const body = document.getElementById('termBody');
+  // old line
+  const oldLine = input.parentElement;
+  oldLine.innerHTML = `<span class="prompt">user@webos:~$ </span>${cmd}`;
+  let output = '';
+  const parts = cmd.split(' ');
+  switch(parts[0].toLowerCase()) {
+    case 'help': output = 'Mavjud buyruqlar: help, date, clear, echo, whoami, neofetch, ls, pwd, uname'; break;
+    case 'date': output = new Date().toLocaleString('uz-UZ'); break;
+    case 'clear':
+      body.innerHTML = '';
+      addTermInput(body);
+      return;
+    case 'echo': output = parts.slice(1).join(' '); break;
+    case 'whoami': output = 'user'; break;
+    case 'neofetch': output = `
+   🖥️ Mini Web OS
+   ─────────────
+   📦 Versiya: 2.0
+   🖥️ Brauzer: ${navigator.userAgent.split(' ').slice(-2).join(' ')}
+   📐 Ekran: ${screen.width}x${screen.height}
+   💾 RAM: ${navigator.deviceMemory || 'Noma\'lum'} GB
+   🌐 Til: ${navigator.language}`; break;
+    case 'ls': output = 'Hujjatlar  Rasmlar  Musiqa  Video  Yuklanmalar  readme.txt'; break;
+    case 'pwd': output = '/home/user'; break;
+    case 'uname': output = 'WebOS 2.0 HTML/JS'; break;
+    case '': break;
+    default: output = `Buyruq topilmadi: ${parts[0]}. Yordam uchun 'help' yozing.`;
+  }
+  if (output) {
+    const outDiv = document.createElement('div');
+    outDiv.className = 'term-output';
+    outDiv.textContent = output;
+    body.appendChild(outDiv);
+  }
+  addTermInput(body);
+  body.scrollTop = body.scrollHeight;
+}
+function addTermInput(body) {
+  const line = document.createElement('div');
+  line.className = 'cmd-line';
+  line.innerHTML = '<span class="prompt">user@webos:~$ </span><input type="text" id="termInput" onkeydown="if(event.key===\'Enter\')termExec()" autofocus>';
+  body.appendChild(line);
+  document.getElementById('termInput').focus();
+}
+
+// ---------- WEATHER ----------
+function openWeather() {
+  const content = `
+    <div class="weather-app">
+      <div class="w-icon">🌤️</div>
+      <div class="w-temp">24°C</div>
+      <div class="w-desc">Qisman bulutli • Toshkent</div>
+      <div class="weather-details">
+        <div><div class="wd-val">💨 12 km/s</div><div class="wd-label">Shamol</div></div>
+        <div><div class="wd-val">💧 45%</div><div class="wd-label">Namlik</div></div>
+        <div><div class="wd-val">👁️ 10 km</div><div class="wd-label">Ko'rinish</div></div>
+      </div>
+    </div>`;
+  createWindow('weather','Ob-havo','🌤️', 350, 300, content);
+}
+
+// ---------- BROWSER ----------
+function openBrowser() {
+  const content = `
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <div class="browser-bar">
+        <button onclick="notify('⬅ Orqaga')">◀</button>
+        <button onclick="notify('➕ Oldinga')">▶</button>
+        <input type="text" value="https://www.google.com" id="browserUrl" placeholder="URL kiriting...">
+        <button onclick="notify('🔄 Sahifa yuklandi!')">↻</button>
+      </div>
+      <div class="browser-content">
+        <div style="text-align:center;">
+          <div style="font-size:48px;margin-bottom:12px;">🌐</div>
+          <div style="font-size:16px;color:#888;">Brauzer sahifasi</div>
+          <div style="font-size:12px;color:#555;margin-top:6px;">URL kiritib "Go" tugmasini bosing</div>
+        </div>
+      </div>
+    </div>`;
+  createWindow('browser','Brauzer','🌐', 650, 450, content);
+}
+
+// ---------- GALLERY ----------
+function openGallery() {
+  const colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#34495e','#e84393','#00b894','#6c5ce7','#fdcb6e'];
+  const emojis = ['🌅','🏔️','🌊','🌸','🌺','🎨','🦋','🌈','🏖️','🌄','🍂','❄️'];
+  let items = '';
+  colors.forEach((c,i) => {
+    items += `<div class="gallery-item" style="background:${c};" onclick="notify('🖼️ ${emojis[i]} rasm ochildi')">${emojis[i]}</div>`;
+  });
+  const content = `<div class="gallery-grid">${items}</div>`;
+  createWindow('gallery','Galeriya','🖼️', 420, 380, content);
+}
+
+// ---------- ABOUT ----------
+function openAbout() {
+  const content = `
+    <div class="about-body">
+      <div class="logo">🖥️</div>
+      <h1>Mini Web OS</h1>
+      <p>Versiya: 2.0</p>
+      <p>HTML, CSS va JavaScript orqali yaratilgan</p>
+      <p style="margin-top:16px;">Bitta faylda to'liq desktop tajriba</p>
+      <p style="color:#555;margin-top:20px;font-size:11px;">© 2025 Barcha huquqlar himoyalangan</p>
+    </div>`;
+  createWindow('about','Tizim haqida','ℹ️', 380, 340, content);
+}
+
+// ---------- MUSIC ----------
+function openMusic() {
+  const songs = [
+    { name: 'Sevdim', artist: 'Sardor', dur: '3:45' },
+    { name: 'Yulduz', artist: 'Shoxrux', dur: '4:12' },
+    { name: 'Ona', artist: 'Abror', dur: '5:01' },
+    { name: 'Bahor', artist: 'Diyorbek', dur: '3:33' },
+    { name: 'Hayot', artist: 'Jasur', dur: '4:20' },
+    { name: 'Muhabbat', artist: 'Ulugbek', dur: '3:55' },
+  ];
+  const list = songs.map((s,i) => `
+    <div style="display:flex;align-items:center;padding:8px 12px;border-radius:6px;cursor:pointer;transition:background .15s;" 
+         onmouseover="this.style.background='rgba(255,255,255,.08)'" 
+         onmouseout="this.style.background='transparent'"
+         onclick="notify('🎵 ${s.name} - ${s.artist} ijro etilmoqda!')">
+      <span style="color:#888;width:24px;">${i+1}</span>
+      <span style="flex:1;">${s.name} — ${s.artist}</span>
+      <span style="color:#666;font-size:11px;">${s.dur}</span>
+    </div>`).join('');
+  const content = `
+    <div style="padding:16px;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:48px;">🎵</div>
+        <div style="color:#fff;font-size:15px;margin-top:6px;">Ijro etilmoqda...</div>
+        <div style="color:#888;font-size:12px;">Sevdim — Sardor</div>
+        <input type="range" min="0" max="100" value="35" style="width:80%;margin-top:12px;accent-color:#0078d4;">
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:10px;">
+          <span style="cursor:pointer;font-size:18px;">⏮</span>
+          <span style="cursor:pointer;font-size:22px;" onclick="notify('▶ Ijro boshlandi!')">▶</span>
+          <span style="cursor:pointer;font-size:18px;">⏭</span>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;">
+        <div style="color:#888;font-size:11px;padding:0 12px 6px;">PLAYLIST</div>
+        ${list}
+      </div>
+    </div>`;
+  createWindow('music','Musiqa','🎵', 380, 500, content);
+}
+
+// ---------- CALENDAR ----------
+function openCalendar() {
+  const now = new Date();
+  const month = now.toLocaleString('uz-UZ',{month:'long'});
+  const year = now.getFullYear();
+  const day = now.getDate();
+  const firstDay = new Date(year, now.getMonth(), 1).getDay();
+  const daysInMonth = new Date(year, now.getMonth()+1, 0).getDate();
+  let days = '';
+  for (let i=0; i<(firstDay||7)-1; i++) days += '<div></div>';
+  for (let d=1; d<=daysInMonth; d++) {
+    const isToday = d === day;
+    days += `<div style="text-align:center;padding:8px;border-radius:6px;cursor:pointer;${isToday?'background:#0078d4;color:#fff;font-weight:bold;':''}" 
+             ${isToday?'' : 'onmouseover="this.style.background=\'rgba(255,255,255,.08)\'" onmouseout="this.style.background=\'transparent\'"'}>${d}</div>`;
+  }
+  const content = `
+    <div style="padding:16px;">
+      <div style="text-align:center;color:#fff;font-size:18px;margin-bottom:16px;">${month.charAt(0).toUpperCase()+month.slice(1)} ${year}</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">
+        <div style="color:#888;font-size:11px;padding:6px;">Du</div>
+        <div style="color:#888;font-size:11px;padding:6px;">Se</div>
+        <div style="color:#888;font-size:11px;padding:6px;">Ch</div>
+        <div style="color:#888;font-size:11px;padding:6px;">Pa</div>
+        <div style="color:#888;font-size:11px;padding:6px;">Ju</div>
+        <div style="color:#888;font-size:11px;padding:6px;">Sh</div>
+        <div style="color:#888;font-size:11px;padding:6px;">Ya</div>
+        ${days}
+      </div>
+    </div>`;
+  createWindow('calendar','Taqvim','📅', 300, 350, content);
+}
+
+// ---------- PHOTOS ----------
+function openPhotos() {
+  const emojis = ['📷','🏞️','🌆','🌃','🎭','🏛️','🗼','🌉','⛲','🎪'];
+  const items = emojis.map((e,i) => {
+    const bg = `hsl(${i*36}, 50%, 30%)`;
+    return `<div style="aspect-ratio:1;border-radius:8px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:40px;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="notify('📷 Rasm ko\'rildi')">${e}</div>`;
+  }).join('');
+  const content = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;padding:12px;">${items}</div>`;
+  createWindow('photos','Rasmlar','📷', 420, 350, content);
+}
+
+// ==================== BOSHLANG'ICH ====================
+notify('🖥️ Mini Web OS ishga tushdi!');
+</script>
+</body>
+</html>
